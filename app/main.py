@@ -25,6 +25,12 @@ def create_app() -> FastAPI:
     app.include_router(
         routers.user_router,
         prefix="/users",
-        tags=["Users"],
+        tags=["Users, Registration"],
+    )
+
+    app.include_router(
+        routers.auth_router,
+        prefix="/auth",
+        tags=["Authentication"],
     )
     return app
