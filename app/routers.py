@@ -4,22 +4,33 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 
-from app.injections import get_user_repository
-from app.repositories import UserRepository
+from app.injections import (
+    get_user_repository, 
+    get_ride_repository,
+)
+from app.repositories import (
+    UserRepository,
+    RideRepository,
+)
 from app.schemas import (
     UserResponse,
-    CreateUser,
+    UserCreate,
     LoginRequest,
     TokenResponse,
+    RideResponse,
+    RideCreate,
 )
 
 from app.security import create_access_token, decode_access_token
 
 user_router = APIRouter()
 auth_router = APIRouter()
+ride_router = APIRouter()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
+
+# ------------- USER ROUTES ------------- #
 
 @user_router.post(
     "/",
@@ -28,7 +39,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 )
 
 def create_user(
-    user_to_create: CreateUser,
+    user_to_create: UserCreate,
     user_repository: Annotated[
         UserRepository, Depends(get_user_repository)
     ],
@@ -38,7 +49,10 @@ def create_user(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
     try:
-        return user_repository.create_user(username=user_to_create.username, password=user_to_create.password)
+        user_model = user_repository.create_user(
+            username=user_to_create.username, password=user_to_create.password
+        )   
+        return UserResponse.model_validate(user_model)
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT) from exception
     
@@ -88,9 +102,7 @@ def login(
 
 def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
-    user_repository: Annotated[
-        UserRepository, Depends(get_user_repository)
-    ],  
+    user_repository: Annotated[UserRepository, Depends(get_user_repository)],  
 ) -> UserResponse:
     try:
         payload = decode_access_token(token)
@@ -129,3 +141,48 @@ def get_me(
     ],
 ) -> UserResponse:
     return current_user
+
+
+# ------------- RIDE ROUTES ------------- #
+
+@ride_router.post(
+    "/",
+    response_model=RideResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={status.HTTP_422_UNPROCESSABLE_CONTENT: {}},
+)
+
+def create_ride(
+    ride_to_create: RideCreate,
+    ride_repository: Annotated[RideRepository, Depends(get_ride_repository)],
+    current_user: Annotated[UserResponse, Depends(get_current_user)],
+) -> RideResponse:
+    try:
+        ride_model = ride_repository.create_ride(
+            title=ride_to_create.title,
+            description=ride_to_create.description,
+            start_time=ride_to_create.start_time,
+            created_by_user_id=current_user.id,
+        ) 
+        return RideResponse.model_validate(ride_model)
+    except Exception as exception:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT
+        ) from exception
+    
+@ride_router.get(
+    "/code/{code}",
+    response_model=RideResponse,
+    responses={status.HTTP_404_NOT_FOUND: {}},
+)
+def get_ride_by_code(
+    code: str,
+    ride_repository: Annotated[
+        RideRepository, Depends(get_ride_repository)
+    ],
+) -> RideResponse:
+    ride = ride_repository.get_by_code(ride_code=code)
+    if not ride:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return RideResponse.model_validate(ride) 
+    

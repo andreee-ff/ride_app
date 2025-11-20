@@ -1,6 +1,7 @@
 from collections.abc import Generator
 
-from fastapi import FastAPI
+from datetime import datetime, timezone
+from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
 from pytest import fixture
 from sqlalchemy import create_engine
@@ -8,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.injections import get_session
 from app.main import create_app
-from app.models import DbModel, UserModel
+from app.models import DbModel, UserModel, RideModel
 
 @fixture(scope="function")
 def app() -> FastAPI:
@@ -38,4 +39,34 @@ def test_user(session: Session) -> UserModel:
     session.add(user)
     session.flush()
     return user
+
+@fixture(scope="function")
+def test_ride(session: Session, test_user: UserModel) -> RideModel:
+    ride = RideModel(
+        code="ABC123",
+        title="Test Ride",
+        description="Test description",
+        start_time=datetime(2025, 11, 18, 15, 30, tzinfo=timezone.utc),
+        created_by_user_id=test_user.id,
+    )
+    session.add(ride)
+    session.flush()
+    return ride
+
+
+@fixture(scope="function")
+def auth_headers(test_client: TestClient, session: Session,) -> dict[str, str]:
+    user = UserModel(username="auth_user", password="authpassword")
+    session.add(user)
+    session.flush()
+
+    login_payload = {
+        "username": user.username,
+        "password": user.password,
+    }
+    login_response = test_client.post("/auth/login", json=login_payload)
+    assert login_response.status_code == status.HTTP_200_OK, login_response.text
+
+    access_token = login_response.json()["access_token"]
+    return {"Authorization": f"Bearer {access_token}"}
 

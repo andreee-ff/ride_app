@@ -11,7 +11,7 @@ def test_missing_user_payload(test_client: TestClient):
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, response.text
 
-def test_register_dulicate_username(test_client: TestClient, session: Session):
+def test_register_duplicate_username(test_client: TestClient, session: Session):
     existing_user = UserModel(username="existing_user", password="password")
     session.add(existing_user)
     session.flush()
@@ -26,7 +26,7 @@ def test_register_success(test_client: TestClient, session: Session):
     payload = {"username": "new_user", "password" : "passs123"}
     expected_response = {
         "id": ANY,
-        "username": "new_user",
+        "username": payload["username"],
     }
 
     response = test_client.post("/users/", json=payload)

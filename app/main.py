@@ -33,4 +33,10 @@ def create_app() -> FastAPI:
         prefix="/auth",
         tags=["Authentication"],
     )
+
+    app.include_router(
+        routers.ride_router,
+        prefix="/rides",
+        tags=["Rides"],
+    )
     return app
