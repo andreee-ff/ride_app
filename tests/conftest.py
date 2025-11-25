@@ -64,7 +64,7 @@ def auth_headers(test_client: TestClient, session: Session,) -> dict[str, str]:
         "username": user.username,
         "password": user.password,
     }
-    login_response = test_client.post("/auth/login", json=login_payload)
+    login_response = test_client.post("/auth/login", data=login_payload)
     assert login_response.status_code == status.HTTP_200_OK, login_response.text
 
     access_token = login_response.json()["access_token"]

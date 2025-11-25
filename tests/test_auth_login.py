@@ -20,7 +20,7 @@ def test_login_success(
         "token_type": "bearer",
     }
 
-    response = test_client.post("/auth/login/", json=payload)
+    response = test_client.post("/auth/login/", data=payload)
 
     assert response.status_code == status.HTTP_200_OK, response.text
     assert (data := response.json()) == expected_response
@@ -28,12 +28,13 @@ def test_login_success(
 
 def test_login_invalid_credentials(
         test_client: TestClient,
+        test_user: UserModel
 ):
     payload = {
         "username": "nonexistent_user",
         "password": "wrongpassword",
      }
-    response = test_client.post("/auth/login/", json=payload)
+    response = test_client.post("/auth/login/", data=payload)
     assert response.status_code  == status.HTTP_401_UNAUTHORIZED, response.text
     assert response.json() == {
         "detail": "Invalid username or password"
@@ -47,7 +48,7 @@ def test_login_me_success(
         "username": test_user.username,
         "password": "testpassword",
     }
-    login_response = test_client.post("/auth/login/", json=login_payload)
+    login_response = test_client.post("/auth/login/", data=login_payload)
     assert login_response.status_code == status.HTTP_200_OK, login_response.text
 
     token = login_response.json()["access_token"]

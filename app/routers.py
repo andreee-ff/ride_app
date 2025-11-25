@@ -1,7 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError
 
 from app.injections import (
@@ -15,10 +15,10 @@ from app.repositories import (
 from app.schemas import (
     UserResponse,
     UserCreate,
-    LoginRequest,
     TokenResponse,
     RideResponse,
     RideCreate,
+    RideUpdate,
 )
 
 from app.security import create_access_token, decode_access_token
@@ -81,13 +81,11 @@ def get_user(
 )
 
 def login(
-    login_data: LoginRequest,
-    user_repository: Annotated[
-        UserRepository, Depends(get_user_repository)
-    ],
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    user_repository: Annotated[UserRepository, Depends(get_user_repository)],
 ) -> TokenResponse:
-    user = user_repository.get_by_username(username=login_data.username)
-    if not user or user.password != login_data.password:
+    user = user_repository.get_by_username(username=form_data.username)
+    if not user or user.password != form_data.password:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
@@ -157,6 +155,7 @@ def create_ride(
     ride_repository: Annotated[RideRepository, Depends(get_ride_repository)],
     current_user: Annotated[UserResponse, Depends(get_current_user)],
 ) -> RideResponse:
+    """
     try:
         ride_model = ride_repository.create_ride(
             title=ride_to_create.title,
@@ -169,6 +168,14 @@ def create_ride(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT
         ) from exception
+        """
+    ride_model = ride_repository.create_ride(
+    title=ride_to_create.title,
+    description=ride_to_create.description,
+    start_time=ride_to_create.start_time,
+    created_by_user_id=current_user.id,
+    ) 
+    return RideResponse.model_validate(ride_model)
     
 @ride_router.get(
     "/code/{code}",
@@ -185,4 +192,83 @@ def get_ride_by_code(
     if not ride:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return RideResponse.model_validate(ride) 
+
+
+@ride_router.get(
+        "/{id}",
+        response_model=RideResponse,
+        responses={status.HTTP_404_NOT_FOUND: {}},
+)
+def get_ride_by_id(
+        id: int,
+        ride_repository: Annotated[RideRepository, Depends(get_ride_repository)],
+) -> RideResponse:
+    ride = ride_repository.get_by_id(ride_id=id)
+    if not ride:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return RideResponse.model_validate(ride)
+
+
+@ride_router.delete(
+    "/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_404_NOT_FOUND: {},       
+        status.HTTP_403_FORBIDDEN: {},
+        },
+)
+async def delete_ride_by_id(
+    id: int,
+    ride_repository: Annotated[RideRepository, Depends(get_ride_repository)],
+    current_user: Annotated[UserResponse, Depends(get_current_user)],
+) -> None:
+    selected_ride = ride_repository.get_by_id(ride_id=id)
+    if not selected_ride:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     
+    if selected_ride.created_by_user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not allowes to delete this ride. The ride was created by another user"
+            )
+    
+    ride_repository.delete_ride(ride=selected_ride)    
+    return status.HTTP_204_NO_CONTENT
+
+
+@ride_router.put(
+    "/{id}",
+    response_model=RideResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {},       
+        status.HTTP_403_FORBIDDEN: {},
+    }
+)
+def update_ride_by_id(
+    id: int,
+    ride_to_update: RideUpdate,
+    ride_repository: Annotated[RideRepository, Depends(get_ride_repository)],
+    current_user: Annotated[UserRepository, Depends(get_current_user)],
+) -> RideResponse:
+    
+    existing_ride = ride_repository.get_by_id(ride_id=id)
+    if not existing_ride:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    
+    if existing_ride.created_by_user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not allowes to delete this ride. The ride was created by another user"
+            )
+    
+    ride_model = ride_repository.update_ride(
+        existing_ride,
+        title=ride_to_update.title,
+        description=ride_to_update.description,
+        start_time=ride_to_update.start_time,
+        is_active=ride_to_update.is_active,
+    )
+    return RideResponse.model_validate(ride_model)
+
+
+

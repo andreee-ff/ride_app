@@ -19,6 +19,8 @@ pip install -r requirements.txt
 ## run application
 ```sh
 uvicorn app.main:create_app --factory --host=0.0.0.0 --port=8000 --reload
+OR
+uvicorn app.main:create_app --factory --reload
 ```
 
 ## run tests

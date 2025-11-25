@@ -2,6 +2,8 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
+from typing import Any
+
 from app.models import UserModel, RideModel
 
 import secrets, string
@@ -77,4 +79,35 @@ class RideRepository:
     def get_by_code(self, *, ride_code: str) -> RideModel | None:
         statement = select(RideModel).where(RideModel.code == ride_code) 
         return(self.session.execute(statement).scalar_one_or_none())
+    
+    def get_by_id(self, *, ride_id: int) -> RideModel | None:
+        statement = select(RideModel).where(RideModel.id == ride_id)
+        return(self.session.execute(statement).scalar_one_or_none())
+    
+    def delete_ride(self, *, ride: RideModel) -> None:
+        self.session.delete(ride)
+        self.session.flush()
 
+    def update_ride(
+            self,
+            ride: RideModel,         
+            *,           
+            title: str | None = None,
+            description: str | None = None,
+            start_time: datetime | None = None,
+            is_active: bool | None = None,
+        ) -> RideModel:
+        update_ride={
+            "title": title,
+            "description": description,
+            "start_time": start_time,
+            "is_active": is_active,
+        }
+
+        for key, value in update_ride.items():
+            if value is not None:
+                setattr(ride, key, value)
+
+        self.session.add(ride)
+        self.session.flush()
+        return ride
