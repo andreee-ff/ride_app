@@ -13,7 +13,7 @@ def test_login_success(
 ):
     payload = {
         "username": test_user.username,
-        "password": "testpassword",
+        "password": test_user.password,
      }
     expected_response = {
         "access_token": ANY,
@@ -28,7 +28,6 @@ def test_login_success(
 
 def test_login_invalid_credentials(
         test_client: TestClient,
-        test_user: UserModel
 ):
     payload = {
         "username": "nonexistent_user",
@@ -40,13 +39,13 @@ def test_login_invalid_credentials(
         "detail": "Invalid username or password"
     }
 
-def test_login_me_success(
+def test_login_me_with_token_success(
         test_client: TestClient,
         test_user: UserModel,
 ):
     login_payload = {
         "username": test_user.username,
-        "password": "testpassword",
+        "password": test_user.password,
     }
     login_response = test_client.post("/auth/login/", data=login_payload)
     assert login_response.status_code == status.HTTP_200_OK, login_response.text
@@ -70,7 +69,7 @@ def test_login_me_without_token(
 ):
     response = test_client.get("/auth/me/")
 
-    assert response.status_code == status. HTTP_401_UNAUTHORIZED, response.text
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED, response.text
     assert response.json() == {
         "detail": "Not authenticated"
     }

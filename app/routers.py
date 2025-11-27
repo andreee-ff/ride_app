@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -126,13 +126,11 @@ def get_current_user(
     return UserResponse.model_validate(user)
 
 
-
 @auth_router.get(
     "/me",
     response_model=UserResponse,
     responses={status.HTTP_401_UNAUTHORIZED: {}},
 )
-
 def get_me(
     current_user: Annotated[
         UserResponse, Depends(get_current_user)
@@ -155,20 +153,7 @@ def create_ride(
     ride_repository: Annotated[RideRepository, Depends(get_ride_repository)],
     current_user: Annotated[UserResponse, Depends(get_current_user)],
 ) -> RideResponse:
-    """
-    try:
-        ride_model = ride_repository.create_ride(
-            title=ride_to_create.title,
-            description=ride_to_create.description,
-            start_time=ride_to_create.start_time,
-            created_by_user_id=current_user.id,
-        ) 
-        return RideResponse.model_validate(ride_model)
-    except Exception as exception:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT
-        ) from exception
-        """
+
     ride_model = ride_repository.create_ride(
     title=ride_to_create.title,
     description=ride_to_create.description,
@@ -178,8 +163,23 @@ def create_ride(
     return RideResponse.model_validate(ride_model)
     
 @ride_router.get(
+    "/",
+    response_model = List[RideResponse],
+    status_code=status.HTTP_200_OK
+)
+
+def get_list_rides(
+    ride_repository: Annotated[RideRepository, Depends(get_ride_repository)],
+) -> List[RideResponse]:
+    
+    rides = ride_repository.get_all_rides()
+    return [RideResponse.model_validate(ride) for ride in rides]
+
+
+@ride_router.get(
     "/code/{code}",
-    response_model=RideResponse,
+    response_model=RideResponse,    
+    status_code=status.HTTP_200_OK,
     responses={status.HTTP_404_NOT_FOUND: {}},
 )
 def get_ride_by_code(
@@ -197,6 +197,7 @@ def get_ride_by_code(
 @ride_router.get(
         "/{id}",
         response_model=RideResponse,
+        status_code=status.HTTP_200_OK,
         responses={status.HTTP_404_NOT_FOUND: {}},
 )
 def get_ride_by_id(
@@ -217,7 +218,7 @@ def get_ride_by_id(
         status.HTTP_403_FORBIDDEN: {},
         },
 )
-async def delete_ride_by_id(
+def delete_ride_by_id(
     id: int,
     ride_repository: Annotated[RideRepository, Depends(get_ride_repository)],
     current_user: Annotated[UserResponse, Depends(get_current_user)],
@@ -233,12 +234,13 @@ async def delete_ride_by_id(
             )
     
     ride_repository.delete_ride(ride=selected_ride)    
-    return status.HTTP_204_NO_CONTENT
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @ride_router.put(
     "/{id}",
-    response_model=RideResponse,
+    response_model=RideResponse,        
+    status_code=status.HTTP_200_OK,
     responses={
         status.HTTP_404_NOT_FOUND: {},       
         status.HTTP_403_FORBIDDEN: {},
@@ -248,7 +250,7 @@ def update_ride_by_id(
     id: int,
     ride_to_update: RideUpdate,
     ride_repository: Annotated[RideRepository, Depends(get_ride_repository)],
-    current_user: Annotated[UserRepository, Depends(get_current_user)],
+    current_user: Annotated[UserResponse, Depends(get_current_user)],
 ) -> RideResponse:
     
     existing_ride = ride_repository.get_by_id(ride_id=id)
@@ -269,6 +271,7 @@ def update_ride_by_id(
         is_active=ride_to_update.is_active,
     )
     return RideResponse.model_validate(ride_model)
+
 
 
 

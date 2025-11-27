@@ -2,11 +2,11 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
-from typing import Any
+from typing import Any, List
+import secrets, string
 
 from app.models import UserModel, RideModel
 
-import secrets, string
 
 class UserRepository:
     session: Session
@@ -76,6 +76,10 @@ class RideRepository:
 
         return new_ride
     
+    def get_all_rides(self) -> List[RideModel]:
+        statement = select(RideModel)
+        return(self.session.execute(statement).scalars().all()) 
+
     def get_by_code(self, *, ride_code: str) -> RideModel | None:
         statement = select(RideModel).where(RideModel.code == ride_code) 
         return(self.session.execute(statement).scalar_one_or_none())
@@ -97,14 +101,14 @@ class RideRepository:
             start_time: datetime | None = None,
             is_active: bool | None = None,
         ) -> RideModel:
-        update_ride={
+        updated_ride={
             "title": title,
             "description": description,
             "start_time": start_time,
             "is_active": is_active,
         }
 
-        for key, value in update_ride.items():
+        for key, value in updated_ride.items():
             if value is not None:
                 setattr(ride, key, value)
 

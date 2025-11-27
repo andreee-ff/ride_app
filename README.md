@@ -27,3 +27,27 @@ uvicorn app.main:create_app --factory --reload
 ```sh
 pytest
 ```
+
+🔐 Environment Variables
+
+The app uses environment variables for JWT configuration.
+All variables are optional and have safe development defaults.
+
+SECRET_KEY
+
+Used for signing JWT tokens.
+
+Default (dev):
+
+SECRET_KEY="dev-secret-key-change-me"
+
+
+For production:
+
+export SECRET_KEY="your-secure-random-key"
+
+ALGORITHM
+HS256
+
+ACCESS_TOKEN_EXPIRE_MINUTES
+60

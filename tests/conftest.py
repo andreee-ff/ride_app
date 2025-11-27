@@ -1,6 +1,8 @@
-from collections.abc import Generator
+from collections.abc import Generator, Callable
 
 from datetime import datetime, timezone
+import secrets, string
+
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
 from pytest import fixture
@@ -52,6 +54,32 @@ def test_ride(session: Session, test_user: UserModel) -> RideModel:
     session.add(ride)
     session.flush()
     return ride
+
+# ------------------ RIDE _ FACTORY
+RideFactoryType = Callable[..., RideModel]
+
+@fixture(scope="function")
+def ride_factory(session: Session, test_user: UserModel) -> RideFactoryType:
+    def _create_ride(
+            *,
+            code: str | None = None,
+            title: str = "Test Ride",
+            description: str = "Test description",
+            start_time: datetime | None = None,
+    ) -> RideModel:
+        random_code = "".join(secrets.choice(string.ascii_uppercase) for _ in range(6))
+        ride = RideModel(
+            code=code or random_code,
+            title=f"{title} {random_code}",
+            description=f"{description} {random_code}",
+            start_time=start_time or datetime(2025, 11, 18, 15, 30, tzinfo=timezone.utc),
+            created_by_user_id=test_user.id,
+        )
+        session.add(ride)
+        session.flush()
+        return ride
+    
+    return _create_ride
 
 
 @fixture(scope="function")
