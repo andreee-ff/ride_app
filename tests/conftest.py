@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.injections import get_session
 from app.main import create_app
-from app.models import DbModel, UserModel, RideModel
+from app.models import DbModel, UserModel, RideModel, ParticipationModel
 
 @fixture(scope="function")
 def app() -> FastAPI:
@@ -41,6 +41,8 @@ def test_user(session: Session) -> UserModel:
     session.add(user)
     session.flush()
     return user
+
+
 
 @fixture(scope="function")
 def test_ride(session: Session, test_user: UserModel) -> RideModel:
@@ -98,3 +100,22 @@ def auth_headers(test_client: TestClient, session: Session,) -> dict[str, str]:
     access_token = login_response.json()["access_token"]
     return {"Authorization": f"Bearer {access_token}"}
 
+
+
+# ------------------ PARTICIPATION
+@fixture(scope="function")
+def test_participation(
+    session: Session,
+    test_user: UserModel,
+    test_ride: RideModel,
+) -> ParticipationModel:
+    participation = ParticipationModel(
+        user_id = test_user.id,
+        ride_id = test_ride.id,
+        latitude = 48.1351,
+        longitude = 11.5820,
+        updated_at = datetime(2025, 11, 18, 15, 30, tzinfo=timezone.utc),
+    )
+    session.add(participation)
+    session.flush()
+    return participation

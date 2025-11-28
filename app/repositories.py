@@ -5,7 +5,7 @@ from sqlalchemy import select
 from typing import Any, List
 import secrets, string
 
-from app.models import UserModel, RideModel
+from app.models import UserModel, RideModel, ParticipationModel
 
 
 class UserRepository:
@@ -34,6 +34,10 @@ class UserRepository:
             .filter(UserModel.id == user_id)
             .first()
         )
+    
+    def get_all_users(self) -> List[UserModel]:
+        statement = select(UserModel)
+        return(self.session.execute(statement).scalars().all()) 
 
 class RideRepository:
     session: Session
@@ -76,9 +80,13 @@ class RideRepository:
 
         return new_ride
     
+
+
+    
     def get_all_rides(self) -> List[RideModel]:
         statement = select(RideModel)
-        return(self.session.execute(statement).scalars().all()) 
+        return(self.session.execute(statement).scalars().all())
+ 
 
     def get_by_code(self, *, ride_code: str) -> RideModel | None:
         statement = select(RideModel).where(RideModel.code == ride_code) 
@@ -101,17 +109,74 @@ class RideRepository:
             start_time: datetime | None = None,
             is_active: bool | None = None,
         ) -> RideModel:
-        updated_ride={
+        ride_to_update ={
             "title": title,
             "description": description,
             "start_time": start_time,
             "is_active": is_active,
         }
 
-        for key, value in updated_ride.items():
+        for key, value in ride_to_update.items():
             if value is not None:
                 setattr(ride, key, value)
 
         self.session.add(ride)
         self.session.flush()
         return ride
+
+
+class ParticipationRepository:
+    session: Session
+
+    def __init__(self, *, session: Session):
+        self.session = session
+
+    def create_participation(
+            self,
+            *,
+            user_id: int,
+            ride_id: int,
+            latitude: float | None=None,
+            longitude: float | None=None,
+            updated_at: datetime | None=None,
+    ) -> ParticipationModel:
+        new_participation = ParticipationModel(
+            user_id = user_id,
+            ride_id = ride_id,
+            latitude = latitude,
+            longitude = longitude,
+            updated_at = updated_at,
+        )
+
+        self.session.add(new_participation)
+        self.session.flush()
+
+        return new_participation
+    
+    def get_by_id(self, *, participation_id: int) -> ParticipationModel | None:
+        return self.session.get(ParticipationModel, participation_id)
+    
+
+    def update_participation(
+        self,
+        participation: ParticipationModel,
+        *,
+        latitude: float,
+        longitude: float, 
+        updated_at: datetime
+    ) -> ParticipationModel:
+        
+        participation_to_update ={
+            "latitude": latitude,
+            "longitude": longitude,
+            "updated_at": updated_at,
+        }
+
+        for key, value in participation_to_update.items():
+            if value is not None:
+                setattr(participation, key, value)
+
+        self.session.add(participation)
+        self.session.flush()
+
+        return participation

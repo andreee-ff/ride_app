@@ -202,7 +202,7 @@ def test_update_ride_updates_only_given_fields_without_api(session: Session):
     user = UserModel(username="creator", password="pass")
     session.add(user)
     session.flush()
-    
+
     ride_repository = RideRepository(session=session)
 
     old_ride = RideModel(
