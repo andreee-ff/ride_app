@@ -22,7 +22,7 @@ def test_create_participation_success(
     }
 
     response = test_client.post(
-        "/rides/participations/",
+        "/participations/",
         json = payload,
         headers = auth_headers,
     )
@@ -49,7 +49,7 @@ def test_get_participation_by_id_success(
     participation_response = ParticipationResponse.model_validate(test_participation)
     expected_response = participation_response.model_dump()
 
-    response = test_client.get(f"/rides/participations/{test_participation.id}")
+    response = test_client.get(f"/participations/{test_participation.id}")
     assert response.status_code == status.HTTP_200_OK, response.text
 
     data = response.json()
@@ -74,7 +74,7 @@ def test_get_participation_by_id_returns_404_not_found(
 ):
     wrong_id = 999
 
-    response = test_client.get(f"/rides/participations/{wrong_id}")
+    response = test_client.get(f"/participations/{wrong_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 def test_get_participation_by_id_returns_422_for_invalid_id(
@@ -82,7 +82,7 @@ def test_get_participation_by_id_returns_422_for_invalid_id(
 ):
     wrong_id = "xxx"
 
-    response = test_client.get(f"/rides/participations/{wrong_id}")
+    response = test_client.get(f"/participations/{wrong_id}")
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
@@ -96,7 +96,7 @@ def test_update_participation_by_id_success(
     }
     
     post_response = test_client.post(
-        "/rides/participations/",
+        "/participations/",
         json = payload_to_post,
         headers = auth_headers,
     )
@@ -112,7 +112,7 @@ def test_update_participation_by_id_success(
     }
 
     put_response = test_client.put(
-        f"/rides/participations/{old_data['id']}",
+        f"/participations/{old_data['id']}",
         json = payload_to_update,
         headers = auth_headers,
     )

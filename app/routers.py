@@ -306,6 +306,21 @@ def update_ride_by_id(
 
 # ------------- PARTICIPANTS ROUTES ------------- #
 
+@participation_router.get(
+        "/",
+        response_model=List[ParticipationResponse],
+        status_code=status.HTTP_200_OK,
+)
+def get_list_participations(
+    participation_repository: Annotated[
+        ParticipationRepository,
+        Depends(get_participation_repository),
+        ]
+) -> List[ParticipationResponse]:
+    
+    participations = participation_repository.get_all_participations()
+    return [ParticipationResponse.model_validate(r) for r in participations]
+
 @participation_router.post(
     "/",
     response_model= ParticipationResponse,
@@ -349,7 +364,6 @@ def get_participation_by_id(
     if not participation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return ParticipationResponse.model_validate(participation)
-
 
 @participation_router.put(
     "/{id}",

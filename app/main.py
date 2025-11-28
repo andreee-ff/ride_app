@@ -9,10 +9,15 @@ from app.models import DbModel
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    print("Startup: Initializing database engine")
     app.state.database_engine = create_engine("sqlite:///ride.db")
     DbModel.metadata.create_all(bind=app.state.database_engine)
     yield
-    app.state.database_engine.dispose()
+
+    print("Shutdown: Disposing database engine")
+    if app.state.database_engine:
+        app.state.database_engine.dispose()
+        app.state.database_engine.pool.dispose() 
 
 
 def create_app() -> FastAPI:
@@ -42,7 +47,7 @@ def create_app() -> FastAPI:
 
     app.include_router(
         routers.participation_router,
-        prefix="/rides/participations",
+        prefix="/participations",
         tags=["Partitipation"],
     )
     return app

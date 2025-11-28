@@ -66,7 +66,6 @@ class ParticipationBase(BaseModel):
 
 class ParticipationCreate(ParticipationBase):
     ride_code: str
-    pass
 
 class ParticipationUpdate(ParticipationBase):
     latitude: float
@@ -81,7 +80,7 @@ class ParticipationResponse(ParticipationBase):
     model_config = ConfigDict(from_attributes=True)
 
     @field_serializer("updated_at")
-    def serialize_dt(self, dt: datetime, _info) -> str:
+    def serialize_dt(self, dt: datetime | None, _info) -> str | None:
         # Convert to UTC and format with +00:00 instead of Z for consistency
         if dt is None:
             return None

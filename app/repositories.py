@@ -80,9 +80,6 @@ class RideRepository:
 
         return new_ride
     
-
-
-    
     def get_all_rides(self) -> List[RideModel]:
         statement = select(RideModel)
         return(self.session.execute(statement).scalars().all())
@@ -156,6 +153,9 @@ class ParticipationRepository:
     def get_by_id(self, *, participation_id: int) -> ParticipationModel | None:
         return self.session.get(ParticipationModel, participation_id)
     
+    def get_all_participations(self) -> List[ParticipationModel]:
+        statement = select(ParticipationModel)
+        return (self.session.execute(statement).scalars().all())
 
     def update_participation(
         self,
