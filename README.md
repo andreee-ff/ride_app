@@ -1,6 +1,6 @@
-# 🚗 RideApp - Ride Sharing Backend API
+# 🚴‍♂️ SafeRide API - Backend for Group Bicycle Rides.
 
-A modern FastAPI-based REST API for managing ride sharing with user authentication, ride management, and participation tracking.
+A modern FastAPI-based REST API for organizing and tracking group bicycle rides in real-time with GPS coordinates, user authentication, and ride management.
 
 ## 🧭 Project Status
 - Codebase audited and streamlined by AI_Assistant
@@ -11,13 +11,42 @@ A modern FastAPI-based REST API for managing ride sharing with user authenticati
 
 ## 🎯 Features
 
-- ✅ User authentication with JWT tokens
-- ✅ Create and manage rides
-- ✅ Track ride participation
+- ✅ User registration and authentication (JWT tokens)
+- ✅ Create bicycle rides with unique join codes
+- ✅ Join rides using ride code
+- ✅ Send GPS coordinates during rides (latitude/longitude/timestamp)
+- ✅ Track all participants' positions in real-time
+- ✅ Future: Analyze group "spread" and identify stragglers and problems
 - ✅ Comprehensive API documentation (Swagger UI)
 - ✅ 50 comprehensive tests (100% passing)
 - ✅ SQLite database with SQLAlchemy ORM
 - ✅ Pydantic data validation
+
+## ✨ Core Functionality
+
+**1. User Registration & Authentication**
+- Users register with username/password
+- Login with JWT token authentication
+- Identify current user via `/auth/me`
+
+**2. Create Bicycle Rides**
+- Organizer creates a ride (title, description, start time)
+- System generates unique 6-character join code (e.g., `A3X9K2`)
+- Share code with participants
+
+**3. Join Rides by Code**
+- Participants join by entering the ride code
+- Creates participation record in database
+
+**4. Send GPS Coordinates (After Authentication)**
+- Participants send their GPS location during the ride
+- Update coordinates via `PUT /participations/{id}`
+- System records: latitude, longitude, timestamp
+
+**5. Group Analytics (Future Development)**
+- Calculate distances between participants
+- Identify riders falling behind
+- Visualize group dynamics and spread
 
 ## 🗄️ Database Choice
 
@@ -64,10 +93,10 @@ SQLite was selected as the database for the following reasons:
 - `DELETE /rides/{id}` - Delete ride
 
 ### Participation (`/participations`)
-- `POST /participations/` - Join a ride
+- `POST /participations/` - Join a ride by code
 - `GET /participations/` - Get all participations
 - `GET /participations/{id}` - Get participation details
-- `PUT /participations/{id}` - Update participation
+- `PUT /participations/{id}` - Send GPS coordinates (latitude, longitude, timestamp)
 
 ## 🚀 Quick Start
 
@@ -79,7 +108,7 @@ SQLite was selected as the database for the following reasons:
 
 **1. Clone and enter project:**
 ```sh
-cd ride_app
+cd saferide_api
 ```
 
 **2. Create virtual environment:**
@@ -119,7 +148,7 @@ uvicorn app.main:create_app --factory --host=0.0.0.0 --port=8000 --reload
 **Import the Postman collection:**
 1. Open Postman
 2. Click **Import** button
-3. Select `Ride_App_API.postman_collection.json` from the project root
+3. Select `SafeRide_API.postman_collection.json` from the project root
 4. Set base URL variable: `baseUrl = http://127.0.0.1:8000`
 5. Start testing endpoints with ready-made requests!
 
@@ -354,13 +383,13 @@ export ACCESS_TOKEN_EXPIRE_MINUTES=60
 ## 📁 Project Structure
 
 ```
-ride_app/
+saferide_api/
 ├── app/                          # Core application
 │   ├── main.py                  # FastAPI app factory with routes
-│   ├── models.py                # SQLAlchemy ORM models
+│   ├── models.py                # SQLAlchemy ORM models (User, Ride, Participation with GPS)
 │   ├── schemas.py               # Pydantic validation schemas
 │   ├── routers.py               # API endpoint definitions
-│   ├── repositories.py          # Data access layer
+│   ├── repositories.py          # Data access layer (ride code generation, GPS updates)
 │   ├── security.py              # JWT token management
 │   ├── injections.py            # Dependency injection
 │   └── __init__.py
@@ -369,7 +398,7 @@ ride_app/
 │   ├── test_auth_login.py       # Authentication tests
 │   ├── test_auth_register.py    # User registration tests
 │   ├── test_operate_with_ride.py # Ride management tests
-│   ├── test_participations.py   # Participation tests
+│   ├── test_participations.py   # Participation + GPS tests
 │   ├── test_unit_auth_and_ride.py # Unit tests
 │   └── conftest.py              # Pytest fixtures
 │
@@ -383,11 +412,19 @@ ride_app/
 ├── .gitignore                   # Git ignore rules
 ├── requirements.txt             # Python dependencies
 ├── seed_data.py                 # Database seeding script
-├── Ride_App_API.postman_collection.json  # Postman API collection
+├── SafeRide_API.postman_collection.json  # Postman API collection
 └── README.md                    # This file
 ```
 
 ## 🛠️ Development
+
+### Technology Stack
+- **FastAPI** - Main backend framework
+- **SQLAlchemy** - Database ORM
+- **SQLite** - Data storage
+- **Pydantic** - Data schemas and validation
+- **pytest** - Testing framework
+- **TDD approach** - Tests first, then code
 
 ### Code Style
 - Type hints throughout
