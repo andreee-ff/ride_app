@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     print("Shutdown: Disposing database engine")
     if app.state.database_engine:
         app.state.database_engine.dispose()
-        app.state.database_engine.pool.dispose() 
+ #       app.state.database_engine.pool.dispose() 
 
 
 def create_app() -> FastAPI:
@@ -51,3 +51,5 @@ def create_app() -> FastAPI:
         tags=["Participation"],
     )
     return app
+
+app = create_app()

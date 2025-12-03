@@ -142,38 +142,14 @@ def get_current_user(
         )
     return UserResponse.model_validate(user)
 
-def get_current_user_model(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    user_repository: Annotated[UserRepository, Depends(get_user_repository)],  
-) -> UserModel:
-    try:
-        payload = decode_access_token(token)
-        subject = payload.get("sub")
-        if subject is None:
-            raise JWTError("Subject not found in token")
-        user_id = int(subject)
-    except (ValueError, JWTError):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
-        )
-    user = user_repository.get_by_id(user_id=user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-    return user
-
-
 @auth_router.get(
     "/me",
     response_model=UserResponse,
     responses={status.HTTP_401_UNAUTHORIZED: {}},
 )
-def get_me(current_user: Annotated[UserModel, Depends(get_current_user_model)],
+def get_me(current_user: Annotated[UserResponse, Depends(get_current_user)],
 ) -> UserResponse:
-    return UserResponse.model_validate(current_user)
+    return current_user
 
 
 # ------------- RIDE ROUTES ------------- #

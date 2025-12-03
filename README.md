@@ -1,13 +1,59 @@
-# 🚴‍♂️ SafeRide API - Backend for Group Bicycle Rides.
+# 🚴‍♂️ SafeRide API v2 - Development Branch
+
+> **⚠️ This is the active development branch (`dev/v2`).**  
+> For the stable evaluation version, see the [`main` branch](https://github.com/andreee-ff/saferide_api).
 
 A modern FastAPI-based REST API for organizing and tracking group bicycle rides in real-time with GPS coordinates, user authentication, and ride management.
 
-## 🧭 Project Status
-- Codebase audited and streamlined by AI_Assistant
-- 50 tests passing (24 original + 26 comprehensive)
-- Auth examples unified around demo user `vadim` / `123456`
-- Windows PowerShell instructions prioritized and verified
-- Ready for GitHub commit and usage
+## 🔄 Development Workflow
+
+### Branch Strategy
+- **`main`** - 📌 Stable version for ReDI School evaluation (protected)
+- **`dev/v2`** - 🚀 Active development branch (YOU ARE HERE)
+
+### Working in dev/v2
+
+```powershell
+# Daily development workflow
+git checkout dev/v2
+# ... make changes ...
+git add .
+git commit -m "feat: your feature description"
+git push
+
+# When v2 is ready for release
+git checkout main
+git merge dev/v2
+git tag -a v2.0 -m "Version 2.0 release"
+git push origin main --tags
+```
+
+---
+
+## 🆕 What's New in v2 (Development)
+
+### Planned Features
+- 🔄 **WebSockets** - Real-time GPS updates
+- 📊 **Group Analytics** - Calculate group "spread" distance
+- 🗺️ **Route History** - Store complete GPS tracks
+- 📱 **Mobile-ready** - Enhanced API for mobile apps
+- ⚠️ **Smart Alerts** - Auto-notify when riders fall behind
+- 🌤️ **Weather Integration** - Real-time weather data
+- 🎨 **Heat Maps** - Visualize problem areas
+
+### In Progress
+- [ ] WebSocket implementation
+- [ ] Distance calculation algorithms
+- [ ] Route storage schema
+
+---
+
+## 🧭 v1 Status (Stable in `main`)
+- ✅ 50 tests passing (24 original + 26 comprehensive)
+- ✅ Complete CRUD operations
+- ✅ JWT authentication
+- ✅ GPS coordinate tracking
+- ✅ Production-ready for evaluation
 
 ## 🎯 Features
 
