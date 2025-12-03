@@ -3,6 +3,9 @@ import random
 import string
 from datetime import datetime, timedelta, timezone
 
+import os
+from dotenv import load_dotenv
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -10,7 +13,7 @@ from app.models import DbModel, UserModel, RideModel, ParticipationModel
 
 
 
-
+load_dotenv()
 
 def seed(engine):
     with Session(engine) as session:
@@ -178,7 +181,10 @@ def seed_massive(engine, num_users=10, num_rides=20, num_participations=50):
 # CLI handling
 # ------------------------------
 if __name__ == "__main__":
-    engine = create_engine("sqlite:///ride.db")
+    database_url = os.getenv("DATABASE_URL", "sqlite:///ride.db")
+    engine = create_engine(database_url)
+    print(f"(CONNECTED) Using database: {database_url.split('@')[-1] if '@' in database_url else database_url}")
+
 
     if "--reset" in sys.argv:
         reset_db(engine)

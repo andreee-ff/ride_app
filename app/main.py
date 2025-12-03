@@ -1,23 +1,40 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+import os
+from dotenv import load_dotenv
+
 from fastapi import FastAPI
 from sqlalchemy import create_engine
 
 from app import routers
 from app.models import DbModel
 
+load_dotenv()
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     print("Startup: Initializing database engine")
-    app.state.database_engine = create_engine("sqlite:///ride.db")
+    database_url = os.getenv("DATABASE_URL", "sqlite:///ride.db")
+
+    if database_url.startswith("postgresql"):
+        app.state.database_engine = create_engine(
+            database_url,
+            pool_pre_ping=True,
+            pool_size=10,
+            max_overflow=20,
+            )
+        print(f"(SUCCESS) Connected to PostgreSQL")
+    else:
+        app.state.database_engine = create_engine(database_url)
+        print(f"(SUCCESS) Connected to SQLite")
+        
     DbModel.metadata.create_all(bind=app.state.database_engine)
     yield
 
     print("Shutdown: Disposing database engine")
     if app.state.database_engine:
         app.state.database_engine.dispose()
- #       app.state.database_engine.pool.dispose() 
 
 
 def create_app() -> FastAPI:

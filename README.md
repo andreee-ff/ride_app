@@ -5,7 +5,60 @@
 
 A modern FastAPI-based REST API for organizing and tracking group bicycle rides in real-time with GPS coordinates, user authentication, and ride management.
 
-## 🔄 Development Workflow
+
+## Table of Contents
+
+- [TL;DR - Quick Start](#tldr---quick-start)
+- [Development Workflow](#development-workflow)
+- [What's New in v2 (Development)](#whats-new-in-v2-development)
+- [v1 Status (Stable in `main`)](#v1-status-stable-in-main)
+- [Features](#features)
+- [Core Functionality](#core-functionality)
+- [Database: PostgreSQL](#database-postgresql)
+- [API Endpoints](#api-endpoints)
+- [Quick Start](#quick-start)
+- [Alternative Setup Options](#alternative-setup-options)
+- [Test Coverage](#test-coverage)
+- [Authentication](#authentication)
+- [Database Management & Seeding](#database-management--seeding)
+- [Environment Variables](#environment-variables)
+- [Project Structure](#project-structure)
+- [Development](#development)
+- [Troubleshooting](#troubleshooting)
+- [Additional Resources](#additional-resources)
+- [License](#license)
+- [About This Project](#about-this-project)
+- [Development Process](#development-process)
+
+---
+
+## TL;DR - Quick Start
+
+```powershell
+# 1. Start PostgreSQL
+docker run --name saferide_postgres -e POSTGRES_USER=saferide_user -e POSTGRES_PASSWORD=yourpass -e POSTGRES_DB=saferide_db -p 5432:5432 -d postgres:16
+
+# 2. Setup project
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+
+# 3. Configure .env
+echo "DATABASE_URL=postgresql://saferide_user:yourpass@localhost:5432/saferide_db" > .env
+
+# 4. Initialize & run
+python seed_data.py --reset
+python seed_data.py
+uvicorn app.main:create_app --factory --reload
+
+# 🎉 Open http://localhost:8000/docs
+```
+
+[⬆️ Back to Top](#table-of-contents)
+
+---
+
+## Development Workflow
 
 ### Branch Strategy
 - **`main`** - 📌 Stable version for ReDI School evaluation (protected)
@@ -28,9 +81,16 @@ git tag -a v2.0 -m "Version 2.0 release"
 git push origin main --tags
 ```
 
+[⬆️ Back to Top](#table-of-contents)
+
 ---
 
-## 🆕 What's New in v2 (Development)
+## What's New in v2 (Development)
+
+### ✅ Completed
+- ✅ **PostgreSQL Migration** - Production-ready database (Docker)
+- ✅ **Environment Configuration** - .env file support
+- ✅ **Docker Ready** - One-command PostgreSQL setup
 
 ### Planned Features
 - 🔄 **WebSockets** - Real-time GPS updates
@@ -40,22 +100,25 @@ git push origin main --tags
 - ⚠️ **Smart Alerts** - Auto-notify when riders fall behind
 - 🌤️ **Weather Integration** - Real-time weather data
 - 🎨 **Heat Maps** - Visualize problem areas
+- 🗺️ **PostGIS** - Advanced geospatial queries
 
 ### In Progress
 - [ ] WebSocket implementation
 - [ ] Distance calculation algorithms
 - [ ] Route storage schema
 
+[⬆️ Back to Top](#table-of-contents)
+
 ---
 
-## 🧭 v1 Status (Stable in `main`)
+## v1 Status (Stable in `main`)
 - ✅ 50 tests passing (24 original + 26 comprehensive)
 - ✅ Complete CRUD operations
 - ✅ JWT authentication
 - ✅ GPS coordinate tracking
 - ✅ Production-ready for evaluation
 
-## 🎯 Features
+## Features
 
 - ✅ User registration and authentication (JWT tokens)
 - ✅ Create bicycle rides with unique join codes
@@ -65,10 +128,13 @@ git push origin main --tags
 - ✅ Future: Analyze group "spread" and identify stragglers and problems
 - ✅ Comprehensive API documentation (Swagger UI)
 - ✅ 50 comprehensive tests (100% passing)
-- ✅ SQLite database with SQLAlchemy ORM
+- ✅ **PostgreSQL database** with SQLAlchemy ORM (Docker ready)
 - ✅ Pydantic data validation
+- ✅ Environment-based configuration (.env)
 
-## ✨ Core Functionality
+[⬆️ Back to Top](#table-of-contents)
+
+## Core Functionality
 
 **1. User Registration & Authentication**
 - Users register with username/password
@@ -94,32 +160,41 @@ git push origin main --tags
 - Identify riders falling behind
 - Visualize group dynamics and spread
 
-## 🗄️ Database Choice
+[⬆️ Back to Top](#table-of-contents)
 
-**Database**: SQLite
+## Database: PostgreSQL
 
-**Justification for choosing SQLite:**
+**Database**: PostgreSQL 16 (Docker)
 
-SQLite was selected as the database for the following reasons:
+**Why PostgreSQL:**
+
+**Production Ready:**
+- ✅ Handles concurrent writes from multiple users
+- ✅ Industry-standard relational database
+- ✅ Scales to thousands of simultaneous connections
+- ✅ ACID compliant with advanced transaction support
+
+**Future-Proof:**
+- ✅ **PostGIS extension** ready for advanced GPS/geospatial queries
+- ✅ JSON fields for storing complete GPS tracks
+- ✅ Advanced indexing for performance optimization
+- ✅ Full-text search capabilities
 
 **Development Benefits:**
-- No separate database server installation or configuration required
-- Entire database in a single file (ride.db) - easy version control and sharing
-- Built-in Python support - no external dependencies needed
-- Simple testing workflow (seed_data.py easily resets and populates the database)
+- ✅ Docker containerized — one command to start
+- ✅ SQLAlchemy ORM — database-agnostic code
+- ✅ Can fallback to SQLite for testing (no PostgreSQL required)
+- ✅ Environment-based configuration (.env file)
 
-**Technical Considerations:**
-- Full SQL and ACID transaction support
-- Sufficient performance for the current application scale
-- Excellent integration with SQLAlchemy ORM
-- Easy migration to PostgreSQL in the future (thanks to SQLAlchemy abstraction layer)
+**Ready for v2 Features:**
+- 🔄 WebSockets for real-time updates
+- 📊 Complex analytics and distance calculations
+- 🗺️ Route history and GPS track storage
+- 🌤️ Integration with external APIs (weather, maps)
 
-**Limitations (acknowledged):**
-- Not suitable for high-load production systems with concurrent writes
-- Limited to a single server (no distributed setup)
-- PostgreSQL recommended for production deployment
+[⬆️ Back to Top](#table-of-contents)
 
-## 📚 API Endpoints
+## API Endpoints
 
 ### Users (`/users`)
 - `POST /users/` - Create new user
@@ -144,10 +219,13 @@ SQLite was selected as the database for the following reasons:
 - `GET /participations/{id}` - Get participation details
 - `PUT /participations/{id}` - Send GPS coordinates (latitude, longitude, timestamp)
 
-## 🚀 Quick Start
+[⬆️ Back to Top](#table-of-contents)
+
+## Quick Start
 
 ### Prerequisites
 - Python 3.13+
+- Docker Desktop (for PostgreSQL)
 - pip
 
 ### Installation
@@ -174,6 +252,33 @@ pip install -U pip setuptools wheel
 pip install -r requirements.txt
 ```
 
+**4. Start PostgreSQL (Docker):**
+```powershell
+docker run --name saferide_postgres `
+  -e POSTGRES_USER=saferide_user `
+  -e POSTGRES_PASSWORD=yourpassword `
+  -e POSTGRES_DB=saferide_db `
+  -p 5432:5432 `
+  -d postgres:16
+```
+
+**5. Configure environment:**
+
+Create `.env` file in project root:
+```env
+DATABASE_URL=postgresql://saferide_user:yourpassword@localhost:5432/saferide_db
+SECRET_KEY=your-secret-key-change-this
+```
+
+**6. Initialize database:**
+```powershell
+# Create tables
+python seed_data.py --reset
+
+# Add demo data (user: vadim/123456, ride: ABC123)
+python seed_data.py
+```
+
 ### Running the Application
 
 **Start the server:**
@@ -189,6 +294,43 @@ uvicorn app.main:create_app --factory --host=0.0.0.0 --port=8000 --reload
 - Swagger UI: http://127.0.0.1:8000/docs
 - ReDoc: http://127.0.0.1:8000/redoc
 
+[⬆️ Back to Top](#table-of-contents)
+
+---
+
+## Alternative Setup Options
+
+### Option 1: Use SQLite Instead of PostgreSQL
+
+If you don't want to use Docker, you can run with SQLite:
+
+1. **Comment out `DATABASE_URL` in `.env`:**
+```env
+# DATABASE_URL=postgresql://saferide_user:yourpassword@localhost:5432/saferide_db
+```
+
+2. **The app will automatically use SQLite** (`ride.db` file)
+
+3. **Run normally:**
+```powershell
+python seed_data.py --reset
+python seed_data.py
+uvicorn app.main:create_app --factory --reload
+```
+
+### Option 2: PostgreSQL Without Docker
+
+Install PostgreSQL natively:
+
+1. Download from [postgresql.org/download](https://www.postgresql.org/download/)
+2. Create database and user via pgAdmin
+3. Update `.env` with your credentials
+4. Run as usual
+
+[⬆️ Back to Top](#table-of-contents)
+
+---
+
 ### Testing with Postman
 
 **Import the Postman collection:**
@@ -201,6 +343,8 @@ uvicorn app.main:create_app --factory --host=0.0.0.0 --port=8000 --reload
 The collection includes all API endpoints organized by feature (Users, Authentication, Rides, Participations).
 
 ### Running Tests
+
+**Note:** Tests use SQLite in-memory database (no PostgreSQL required for testing)
 
 ```sh
 # Run all tests (original + comprehensive)
@@ -219,7 +363,7 @@ pytest AI_Assistant_Analysis/comprehensive_tests/test_comprehensive.py::TestSecu
 pytest --cov=app --cov-report=html
 ```
 
-## 📊 Test Coverage
+## Test Coverage
 
 **Total: 50 tests (100% passing)** ✅
 
@@ -241,7 +385,7 @@ pytest --cov=app --cov-report=html
 
 **See `AI_Assistant_Analysis/README_AI.md` for detailed test breakdown, comparison with original tests, and enhancement recommendations.**
 
-## 🔐 Authentication
+## Authentication
 
 The API uses JWT (JSON Web Token) authentication.
 
@@ -370,29 +514,73 @@ The easiest way to test the API is using Swagger UI:
 | `409 Conflict` | Username already exists | Use different username |
 | `404 Not Found` | Endpoint doesn't exist | Check endpoint URL spelling |
 
-## 🌱 Database Management & Seeding
+## Database Management & Seeding
 
-The app uses SQLite database (auto-created on first run).
+The app uses **PostgreSQL** database (via Docker).
 
-### Reset Database
+### 🐳 Docker Commands
+
+**Start PostgreSQL:**
+```powershell
+docker start saferide_postgres
+```
+
+**Stop PostgreSQL:**
+```powershell
+docker stop saferide_postgres
+```
+
+**View logs:**
+```powershell
+docker logs saferide_postgres
+```
+
+**Remove container (data will be lost!):**
+```powershell
+docker rm -f saferide_postgres
+```
+
+### 🗄️ Database Access
+
+**Connect via psql (interactive):**
+```powershell
+docker exec -it saferide_postgres psql -U saferide_user -d saferide_db
+```
+
+Inside psql:
+```sql
+\dt                    -- List all tables
+\d users              -- Describe users table
+SELECT * FROM users;  -- Query data
+\q                    -- Quit
+```
+
+**Run SQL query directly:**
+```powershell
+docker exec -it saferide_postgres psql -U saferide_user -d saferide_db -c "SELECT * FROM users;"
+```
+
+### 🌱 Seeding Data
+
+**Reset Database:**
 Remove all tables and recreate empty schema:
 ```sh
 python seed_data.py --reset
 ```
 
-### Seed Default Demo Data
+**Seed Default Demo Data:**
 Creates demo users, rides, and participation records:
 ```sh
 python seed_data.py
 ```
 Creates:
 - User: `vadim` / password: `123456`
-- Several demo rides
+- Demo ride: `ABC123`
 - Sample participation records
 
 Script is idempotent (won't create duplicates).
 
-### Seed Large Dataset
+**Seed Large Dataset:**
 Generate random test data:
 ```sh
 python seed_data.py --massive
@@ -408,7 +596,7 @@ Creates:
 python seed_data.py --massive --users=50 --rides=100 --participations=500
 ```
 
-## ⚙️ Environment Variables
+## Environment Variables
 
 Configuration via `.env` file (optional, has safe defaults):
 
@@ -426,7 +614,7 @@ export ALGORITHM="HS256"
 export ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 saferide_api/
@@ -462,21 +650,28 @@ saferide_api/
 └── README.md                    # This file
 ```
 
-## 🛠️ Development
+[⬆️ Back to Top](#table-of-contents)
+
+## Development
 
 ### Technology Stack
-- **FastAPI** - Main backend framework
-- **SQLAlchemy** - Database ORM
-- **SQLite** - Data storage
-- **Pydantic** - Data schemas and validation
+- **FastAPI** - Modern Python web framework
+- **PostgreSQL 16** - Production-grade database
+- **SQLAlchemy** - Database ORM (supports both PostgreSQL & SQLite)
+- **psycopg2** - PostgreSQL driver
+- **Docker** - Containerized PostgreSQL
+- **Pydantic** - Data validation and schemas
 - **pytest** - Testing framework
-- **TDD approach** - Tests first, then code
+- **python-dotenv** - Environment configuration
+- **JWT** - Authentication tokens
 
 ### Code Style
 - Type hints throughout
 - Pydantic for data validation
-- SQLAlchemy ORM for database
-- FastAPI for API framework
+- SQLAlchemy ORM for database abstraction
+- FastAPI dependency injection
+- Environment-based configuration
+- TDD approach - Tests first, then code
 
 ### Adding New Tests
 Tests should go in `/tests` for original tests or `AI_Assistant_Analysis/comprehensive_tests/` for additional integration tests.
@@ -486,7 +681,7 @@ Running tests:
 pytest tests/ -v
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 **Virtual environment not activating?**
 - Windows: Use `.\venv\Scripts\Activate.ps1` (PowerShell)
@@ -506,22 +701,22 @@ uvicorn app.main:create_app --factory --port=8001 --reload
 - Check Python version: 3.13+ required
 - Clear cache: `pytest --cache-clear`
 
-## 📖 Additional Resources
+## Additional Resources
 
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
 - [Pydantic Documentation](https://docs.pydantic.dev/)
 - [pytest Documentation](https://docs.pytest.org/)
 
-## 📄 License
+## License
 
 Maybe ... one day ;)
 
-## 🎓 About This Project
+## About This Project
 
 This project was created as a final project after completing the Python Backend Development course at **ReDI School of Digital Integration Munich**.
 
-## 🤝 Development Process
+## Development Process
 
 **Developer: Vadim Andreev**
 - All code logic, API design, and implementation decisions
