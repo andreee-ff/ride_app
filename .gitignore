@@ -58,6 +58,9 @@ Thumbs.db
 postman/
 .postman/
 
+# Presentation materials
+presentation/
+
 # Project specific
 ride.db
 comprehensive_test.db
