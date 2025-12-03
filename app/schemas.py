@@ -2,22 +2,36 @@ from datetime import datetime, timezone
 from typing import Annotated
 from pydantic import BaseModel, ConfigDict, AwareDatetime, AfterValidator, field_serializer
 
+
+class TimestampMixin(BaseModel):
+    @field_serializer("*")# Serialize all datetime fields
+    @classmethod
+    def serialize_dt(cls, value, _info): 
+        if isinstance(value, datetime):
+            if value.tzinfo is None:
+                value = value.replace(tzinfo=timezone.utc)
+            iso_str = value.astimezone(timezone.utc).isoformat()
+            return iso_str.replace("Z", "+00:00")
+        return value
+
 #------------------------ USER
 
 class UserCreate(BaseModel):
     username: str
     password: str
 
-class UserResponse(BaseModel):
+class UserResponse(TimestampMixin):
     id: int
     username: str
+    created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
 #------------------------ TOKEN
 
-class TokenResponse(BaseModel):
+class TokenResponse(TimestampMixin):
     access_token: str
     token_type: str = "bearer"
 
@@ -33,23 +47,15 @@ class RideBase(BaseModel):
 class RideCreate(RideBase):
     pass
 
-class RideResponse(RideBase):
+class RideResponse(RideBase, TimestampMixin):
     id: int
     code: str
     created_by_user_id: int
     created_at: datetime
+    updated_at: datetime
     is_active: bool
 
     model_config = ConfigDict(from_attributes=True)
-
-    @field_serializer("start_time", "created_at")
-    def serialize_dt(self, dt: datetime, _info) -> str:
-        # Convert to UTC and format with +00:00 instead of Z for consistency
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        # Use isoformat() and replace Z with +00:00 for consistency
-        iso_str = dt.astimezone(timezone.utc).isoformat()
-        return iso_str.replace("Z", "+00:00")
 
 class RideUpdate(RideBase):
     title: str | None = None
@@ -72,23 +78,13 @@ class ParticipationUpdate(ParticipationBase):
     longitude: float
     updated_at: datetime
 
-class ParticipationResponse(ParticipationBase):
+class ParticipationResponse(ParticipationBase, TimestampMixin):
     id: int
     user_id: int
     ride_id: int
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
-    @field_serializer("updated_at")
-    def serialize_dt(self, dt: datetime | None, _info) -> str | None:
-        # Convert to UTC and format with +00:00 instead of Z for consistency
-        if dt is None:
-            return None
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        # Use isoformat() and replace Z with +00:00 for consistency
-        iso_str = dt.astimezone(timezone.utc).isoformat()
-        return iso_str.replace("Z", "+00:00")
 
 
 

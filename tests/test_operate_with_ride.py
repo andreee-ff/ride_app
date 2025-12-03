@@ -43,6 +43,7 @@ def test_create_ride_success(
     )
     assert isinstance(data["created_by_user_id"], int)
     assert isinstance(data["created_at"], str)
+    assert isinstance(data["updated_at"], str)
     assert data["is_active"] is True
     assert (
         session.execute(
@@ -56,7 +57,6 @@ def test_get_all_rides_success(
         ride_factory: RideFactoryType,
 ):
     count_ride = 3
-
     created_rides = [ride_factory() for _ in range(count_ride)]
 
     response = test_client.get("/rides/")
@@ -83,6 +83,7 @@ def test_get_ride_by_code_success(
         "start_time": ANY,
         "created_by_user_id": ANY,
         "created_at": ANY,
+        "updated_at": ANY,
         "is_active": ANY,
     }
 
@@ -103,6 +104,7 @@ def test_get_ride_by_id_success(
         "start_time": ANY,
         "created_by_user_id": ANY,
         "created_at": ANY,
+        "updated_at": ANY,
         "is_active": ANY,
     }
 
@@ -193,6 +195,7 @@ def test_edit_ride_by_id_success(
         "start_time": response_data["start_time"], 
         "created_by_user_id": created_ride["created_by_user_id"],
         "created_at": created_ride["created_at"],
+        "updated_at": response_data["updated_at"],
         "is_active": update_payload["is_active"],
     }
     assert response_data == expected_response

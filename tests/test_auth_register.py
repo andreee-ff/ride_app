@@ -27,6 +27,8 @@ def test_register_success(test_client: TestClient, session: Session):
     expected_response = {
         "id": ANY,
         "username": payload["username"],
+        "created_at": ANY,
+        "updated_at": ANY,
     }
 
     response = test_client.post("/users/", json=payload)
@@ -48,6 +50,8 @@ def test_get_user_by_id_success(
     expected_response = {
         "id": test_user.id,
         "username": test_user.username,
+        "created_at": ANY,
+        "updated_at": ANY,
     }
 
     response = test_client.get(f"/users/{test_user.id}")

@@ -14,6 +14,8 @@ class UserModel(DbModel):
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(length=25), nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String(length=255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
 
     organized_rides: Mapped[list["RideModel"]] = relationship(back_populates="organizer")
     participated_in_rides: Mapped[list["ParticipationModel"]] = relationship(back_populates="participant")
@@ -31,6 +33,7 @@ class RideModel(DbModel):
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_by_user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     is_active: Mapped[bool] = mapped_column(nullable=False, default=True)
 
     organizer: Mapped["UserModel"] = relationship(back_populates="organized_rides")
@@ -48,6 +51,7 @@ class ParticipationModel(DbModel):
     ride_id: Mapped[int] = mapped_column(ForeignKey("rides.id"), nullable=False)
     latitude: Mapped[float] = mapped_column(Numeric(10, 8), nullable=True)
     longitude: Mapped[float] = mapped_column(Numeric(10, 8), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] =  mapped_column(DateTime(timezone=True), nullable=True)
 
     participant: Mapped["UserModel"] = relationship(back_populates="participated_in_rides")

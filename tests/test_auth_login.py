@@ -56,13 +56,13 @@ def test_login_me_with_token_success(
         "/auth/me/",
         headers={"Authorization": f"Bearer {token}"},
     )
-    expected_response ={
-        "id": test_user.id,
-        "username": test_user.username,
-    }
 
+    response_data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert response.json() == expected_response
+    assert response_data["id"] == test_user.id
+    assert response_data["username"] == test_user.username
+    assert "created_at" in response_data
+    assert "updated_at" in response_data
 
 def test_login_me_without_token(
         test_client: TestClient,
