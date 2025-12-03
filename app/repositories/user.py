@@ -21,18 +21,12 @@ class UserRepository:
         return new_user
      
     def get_by_username(self, *, username: str) -> UserModel | None:
-        return (
-            self.session.query(UserModel)
-            .filter(UserModel.username == username)
-            .first()
-        )
+        statement = select(UserModel).where(UserModel.username == username)
+        return self.session.execute(statement).scalar_one_or_none()
     
     def get_by_id(self, *, user_id: int) -> UserModel | None:
-        return (
-            self.session.query(UserModel)
-            .filter(UserModel.id == user_id)
-            .first()
-        )
+        statement = select(UserModel).where(UserModel.id == user_id)
+        return self.session.execute(statement).scalar_one_or_none()
     
     def get_all_users(self) -> Sequence[UserModel]:
         statement = select(UserModel)

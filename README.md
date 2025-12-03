@@ -91,8 +91,30 @@ git push origin main --tags
 - ✅ **PostgreSQL Migration** - Production-ready database (Docker)
 - ✅ **Environment Configuration** - .env file support
 - ✅ **Docker Ready** - One-command PostgreSQL setup
+- ✅ **Modular Architecture** - Routers and repositories split into separate files
+- ✅ **Timestamps** - Auto-generated `created_at` and `updated_at` fields
+- ✅ **DRY Serialization** - TimestampMixin for consistent datetime formatting
 
-### Planned Features
+### 🚨 Security TODO (CRITICAL for Production)
+> **⚠️ WARNING: Passwords are currently stored in plain text!**  
+> This is acceptable for learning/development, but **MUST BE FIXED** before production.
+>
+> **What needs to be done:**
+> - [ ] Install `passlib[bcrypt]` for password hashing
+> - [ ] Add `hash_password()` and `verify_password()` to `app/security.py`
+> - [ ] Update `UserRepository.create_user()` to hash passwords
+> - [ ] Update `auth.login()` to use `verify_password()`
+> - [ ] Re-seed database with hashed passwords
+>
+> **Why this is critical:**
+> - Plain text passwords are visible in database dumps
+> - Anyone with database access can see all passwords
+> - Violates OWASP security guidelines
+> - Major security vulnerability for real users
+>
+> **See:** [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
+
+### 🔄 Planned Features
 - 🔄 **WebSockets** - Real-time GPS updates
 - 📊 **Group Analytics** - Calculate group "spread" distance
 - 🗺️ **Route History** - Store complete GPS tracks

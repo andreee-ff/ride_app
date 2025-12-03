@@ -18,10 +18,9 @@ from app.schemas import (
     RideUpdate,
 )
 
-from app.routers.auth import get_current_user
+from app.routers.dependencies import get_current_user
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 # ------------- RIDE ROUTES ------------- #
 

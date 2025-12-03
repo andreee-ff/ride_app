@@ -16,7 +16,6 @@ from app.schemas import (
 
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 # ------------- USER ROUTES ------------- #
