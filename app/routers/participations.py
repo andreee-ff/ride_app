@@ -1,4 +1,5 @@
 from typing import Annotated, List
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -20,7 +21,6 @@ from app.schemas import (
 from app.routers.dependencies import get_current_user
 
 router = APIRouter()
-
 
 
 # ------------- PARTICIPANTS ROUTES ------------- #
@@ -56,13 +56,17 @@ def create_participation(
     if not current_ride:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND)
     
-    participation_model = participation_repository.create_participation(
-        user_id = current_user.id,
-        ride_id = current_ride.id,
-        latitude = participation_to_create.latitude,
-        longitude = participation_to_create.longitude,
-        updated_at = participation_to_create.updated_at,
-    )
+    try:
+        participation_model = participation_repository.create_participation(
+            user_id = current_user.id,
+            ride_id = current_ride.id,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        )
+    
     return ParticipationResponse.model_validate(participation_model)
 
 @router.get(
@@ -121,7 +125,7 @@ def update_participation_by_id(
         existing_participation,
         latitude = participation_to_update.latitude,
         longitude = participation_to_update.longitude,
-        updated_at = participation_to_update.updated_at,
+        location_timestamp = participation_to_update.location_timestamp,
     )
 
     return ParticipationResponse.model_validate(participation_model)

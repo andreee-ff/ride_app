@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import String, Boolean, ForeignKey, func, DateTime
+from sqlalchemy import String, Boolean, ForeignKey, func, DateTime, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import List, Optional
 from sqlalchemy import Numeric
@@ -34,13 +34,17 @@ class RideModel(DbModel):
     created_by_user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=False,
-        )
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     is_active: Mapped[bool] = mapped_column(nullable=False, default=True)
 
     organizer: Mapped["UserModel"] = relationship(back_populates="organized_rides")
-    has_participants: Mapped[list["ParticipationModel"]] = relationship(back_populates="ride")
+    has_participants: Mapped[list["ParticipationModel"]] = relationship(
+        back_populates="ride",
+        cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"RideModel(id={self.id!r}, code={self.code!r}, title={self.title!r})"
@@ -48,20 +52,26 @@ class RideModel(DbModel):
 
 class ParticipationModel(DbModel):
     __tablename__ = "participations"
+    __table_args__ = (
+        UniqueConstraint('user_id', 'ride_id', name='uix_user_ride'),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
         )
     ride_id: Mapped[int] = mapped_column(
         ForeignKey("rides.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
         )
     latitude: Mapped[float] = mapped_column(Numeric(10, 8), nullable=True)
     longitude: Mapped[float] = mapped_column(Numeric(10, 8), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
-    updated_at: Mapped[datetime] =  mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime] =  mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+    location_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
 
     participant: Mapped["UserModel"] = relationship(back_populates="participated_in_rides")
     ride: Mapped["RideModel"] = relationship(back_populates="has_participants")

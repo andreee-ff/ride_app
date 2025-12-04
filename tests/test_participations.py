@@ -40,7 +40,7 @@ def test_create_participation_success(
     assert response.json()["ride_id"] == current_ride_id, response.text
     assert response.json()["latitude"] is None, response.text
     assert response.json()["longitude"] is None, response.text
-    assert response.json()["updated_at"] is None, response.text
+    assert response.json()["location_timestamp"] is None, response.text
 
 def test_get_participation_by_id_success(
         test_client: TestClient,
@@ -65,8 +65,8 @@ def test_get_participation_by_id_success(
         assert data[key] == float(expected_response[key])
 
     assert datetime.fromisoformat(data["updated_at"]) == datetime.fromisoformat(
-    expected_response["updated_at"]
-)
+        expected_response["updated_at"]
+    )
     
 
 def test_get_participation_by_id_returns_404_not_found(
@@ -108,7 +108,7 @@ def test_update_participation_by_id_success(
     payload_to_update ={
         "latitude": 40.7128,
         "longitude": -74.0060,
-        "updated_at": datetime(2026,1,1,11,11,11,tzinfo=timezone.utc).isoformat(),
+        "location_timestamp": datetime(2026,1,1,11,11,11,tzinfo=timezone.utc).isoformat(),
     }
 
     put_response = test_client.put(
@@ -128,8 +128,8 @@ def test_update_participation_by_id_success(
     assert new_data["latitude"] == payload_to_update["latitude"]
     assert new_data["longitude"] == payload_to_update["longitude"]
 
-    assert datetime.fromisoformat(new_data["updated_at"]) == datetime.fromisoformat(
-        payload_to_update["updated_at"]
+    assert datetime.fromisoformat(new_data["location_timestamp"]) == datetime.fromisoformat(
+        payload_to_update["location_timestamp"]
     )
 
 

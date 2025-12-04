@@ -1,6 +1,7 @@
 from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from typing import Sequence
 
@@ -19,20 +20,20 @@ class ParticipationRepository:
             *,
             user_id: int,
             ride_id: int,
-            latitude: float | None=None,
-            longitude: float | None=None,
-            updated_at: datetime | None=None,
     ) -> ParticipationModel:
         new_participation = ParticipationModel(
             user_id = user_id,
             ride_id = ride_id,
-            latitude = latitude,
-            longitude = longitude,
-            updated_at = updated_at,
         )
 
         self.session.add(new_participation)
-        self.session.flush()
+
+        try:
+            self.session.flush()
+        except IntegrityError as exc:
+            if "uix_user_ride" in str(exc):
+                raise ValueError("User has already joined this ride.") from exc
+            raise
 
         return new_participation
     
@@ -49,13 +50,13 @@ class ParticipationRepository:
         *,
         latitude: float,
         longitude: float, 
-        updated_at: datetime
+        location_timestamp: datetime
     ) -> ParticipationModel:
         
-        participation_to_update ={
+        participation_to_update = {
             "latitude": latitude,
             "longitude": longitude,
-            "updated_at": updated_at,
+            "location_timestamp": location_timestamp,
         }
 
         for key, value in participation_to_update.items():

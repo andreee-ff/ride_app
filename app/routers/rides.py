@@ -108,7 +108,7 @@ def delete_ride_by_id(
     if selected_ride.created_by_user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not allowes to delete this ride. The ride was created by another user"
+            detail="Not allowed to delete this ride. The ride was created by another user"
             )
     
     ride_repository.delete_ride(ride=selected_ride)    
@@ -137,7 +137,7 @@ def update_ride_by_id(
     if existing_ride.created_by_user_id != current_user.id:
         raise HTTPException(
             status_code = status.HTTP_403_FORBIDDEN,
-            detail = "Not allowes to update this ride. It belongs to another user",
+            detail = "Not allowed to update this ride. It belongs to another user",
             )
     
     ride_model = ride_repository.update_ride(
