@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -44,6 +44,14 @@ class ParticipationRepository:
         statement = select(ParticipationModel)
         return (self.session.execute(statement).scalars().all())
 
+    def get_by_ride_id(self, *, ride_id: int) -> Sequence[ParticipationModel]:
+        statement = (
+            select(ParticipationModel)
+            .where(ParticipationModel.ride_id == ride_id)
+            .options(joinedload(ParticipationModel.participant))
+        )
+        return self.session.execute(statement).scalars().all()
+
     def update_participation(
         self,
         participation: ParticipationModel,
@@ -67,3 +75,11 @@ class ParticipationRepository:
         self.session.flush()
 
         return participation
+
+    def delete_participation(
+        self,
+        *, 
+        participation: ParticipationModel,
+        ) -> None:
+        self.session.delete(participation)
+        self.session.flush()

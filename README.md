@@ -1,5 +1,9 @@
 # 🚴‍♂️ SafeRide API v2 - Development Branch
 
+**📦 Backend Documentation** | [📱 Frontend README](../saferide_frontend/README.md) | [📋 Project Status](../PROJECT_STATUS.md)
+
+---
+
 > **⚠️ This is the active development branch (`dev/v2`).**  
 > For the stable evaluation version, see the [`main` branch](https://github.com/andreee-ff/saferide_api).
 
@@ -34,24 +38,57 @@ A modern FastAPI-based REST API for organizing and tracking group bicycle rides 
 
 ## TL;DR - Quick Start
 
+### 🆕 First Time Setup (Fresh Installation)
+
 ```powershell
-# 1. Start PostgreSQL
+# 1. Start PostgreSQL in Docker
 docker run --name saferide_postgres -e POSTGRES_USER=saferide_user -e POSTGRES_PASSWORD=yourpass -e POSTGRES_DB=saferide_db -p 5432:5432 -d postgres:16
 
-# 2. Setup project
+# 2. Create virtual environment
 python -m venv venv
 .\venv\Scripts\activate
+
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 3. Configure .env
+# 4. Create .env file
 echo "DATABASE_URL=postgresql://saferide_user:yourpass@localhost:5432/saferide_db" > .env
+echo "SECRET_KEY=your-secret-key-here-change-in-production" >> .env
 
-# 4. Initialize & run
-python seed_data.py --reset
+# 5. Create database schema and seed data
+python -c "from sqlalchemy import create_engine; from app.models import DbModel; import os; from dotenv import load_dotenv; load_dotenv(); engine = create_engine(os.getenv('DATABASE_URL')); DbModel.metadata.create_all(engine); print('✅ Database schema created!')"
 python seed_data.py
+
+# 6. Run the server
 uvicorn app.main:create_app --factory --reload
 
 # 🎉 Open http://localhost:8000/docs
+# 🔐 Test credentials: vadim / 123456
+```
+
+### 🔄 Restart (Already Installed)
+
+```powershell
+# 1. Start PostgreSQL (if not running)
+docker start saferide_postgres
+
+# 2. Activate virtual environment
+.\venv\Scripts\activate
+
+# 3. Run the server
+uvicorn app.main:create_app --factory --reload
+
+# 🎉 Open http://localhost:8000/docs
+```
+
+### 🔧 Database Reset (When Schema Changes)
+
+```powershell
+# Drop and recreate all tables (⚠️ deletes all data!)
+python -c "from sqlalchemy import create_engine; from app.models import DbModel; import os; from dotenv import load_dotenv; load_dotenv(); engine = create_engine(os.getenv('DATABASE_URL')); DbModel.metadata.drop_all(engine); DbModel.metadata.create_all(engine); print('✅ Database reset complete!')"
+
+# Reload test data
+python seed_data.py
 ```
 
 [⬆️ Back to Top](#table-of-contents)
@@ -94,6 +131,8 @@ git push origin main --tags
 - ✅ **Modular Architecture** - Routers and repositories split into separate files
 - ✅ **Timestamps** - Auto-generated `created_at` and `updated_at` fields
 - ✅ **DRY Serialization** - TimestampMixin for consistent datetime formatting
+- ✅ **WebSockets** - Real-time GPS updates (Socket.IO)
+- ✅ **New Ride Filters** - /rides/owned and /rides/joined endpoints
 
 ### 🚨 Security TODO (CRITICAL for Production)
 > **⚠️ WARNING: Passwords are currently stored in plain text!**  
@@ -115,7 +154,6 @@ git push origin main --tags
 > **See:** [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
 
 ### 🔄 Planned Features
-- 🔄 **WebSockets** - Real-time GPS updates
 - 📊 **Group Analytics** - Calculate group "spread" distance
 - 🗺️ **Route History** - Store complete GPS tracks
 - 📱 **Mobile-ready** - Enhanced API for mobile apps
@@ -125,7 +163,6 @@ git push origin main --tags
 - 🗺️ **PostGIS** - Advanced geospatial queries
 
 ### In Progress
-- [ ] WebSocket implementation
 - [ ] Distance calculation algorithms
 - [ ] Route storage schema
 
@@ -134,7 +171,7 @@ git push origin main --tags
 ---
 
 ## v1 Status (Stable in `main`)
-- ✅ 50 tests passing (24 original + 26 comprehensive)
+- ✅ 128 tests passing (Unit + Integration + Comprehensive)
 - ✅ Complete CRUD operations
 - ✅ JWT authentication
 - ✅ GPS coordinate tracking
@@ -145,11 +182,12 @@ git push origin main --tags
 - ✅ User registration and authentication (JWT tokens)
 - ✅ Create bicycle rides with unique join codes
 - ✅ Join rides using ride code
-- ✅ Send GPS coordinates during rides (latitude/longitude/timestamp)
+- ✅ **Real-time GPS Tracking** via WebSockets (Socket.IO)
 - ✅ Track all participants' positions in real-time
+- ✅ Filter rides by "Owned by me" and "Joined by me"
 - ✅ Future: Analyze group "spread" and identify stragglers and problems
 - ✅ Comprehensive API documentation (Swagger UI)
-- ✅ 50 comprehensive tests (100% passing)
+- ✅ **128 comprehensive tests** (100% passing)
 - ✅ **PostgreSQL database** with SQLAlchemy ORM (Docker ready)
 - ✅ Pydantic data validation
 - ✅ Environment-based configuration (.env)
@@ -167,15 +205,18 @@ git push origin main --tags
 - Organizer creates a ride (title, description, start time)
 - System generates unique 6-character join code (e.g., `A3X9K2`)
 - Share code with participants
+- **View created rides:** `GET /rides/owned`
 
 **3. Join Rides by Code**
 - Participants join by entering the ride code
 - Creates participation record in database
+- **View joined rides:** `GET /rides/joined`
 
-**4. Send GPS Coordinates (After Authentication)**
-- Participants send their GPS location during the ride
-- Update coordinates via `PUT /participations/{id}`
-- System records: latitude, longitude, timestamp
+**4. Real-time GPS Tracking (WebSockets)**
+- Frontend connects via Socket.IO
+- Participants emit positional updates
+- All participants in the same "room" (ride) receive live updates
+- Fallback: `PUT /participations/{id}` for HTTP updates
 
 **5. Group Analytics (Future Development)**
 - Calculate distances between participants
@@ -232,6 +273,8 @@ git push origin main --tags
 - `GET /rides/` - Get all rides
 - `GET /rides/{id}` - Get ride by ID
 - `GET /rides/code/{code}` - Get ride by code
+- `GET /rides/owned` - Get rides created by current user
+- `GET /rides/joined` - Get rides joined by current user
 - `PUT /rides/{id}` - Update ride
 - `DELETE /rides/{id}` - Delete ride
 
@@ -239,7 +282,8 @@ git push origin main --tags
 - `POST /participations/` - Join a ride by code
 - `GET /participations/` - Get all participations
 - `GET /participations/{id}` - Get participation details
-- `PUT /participations/{id}` - Send GPS coordinates (latitude, longitude, timestamp)
+- `PUT /participations/{id}` - Send GPS coordinates (HTTP fallback)
+- `DELETE /participations/{id}` - Leave a ride (Cancel participation)
 
 [⬆️ Back to Top](#table-of-contents)
 
@@ -304,12 +348,12 @@ python seed_data.py
 ### Running the Application
 
 **Start the server:**
-```sh
-# Default (localhost:8000)
-uvicorn app.main:create_app --factory --reload
+```powershell
+# Using helper script (Windows PowerShell)
+.\start-backend.ps1
 
-# Custom host/port
-uvicorn app.main:create_app --factory --host=0.0.0.0 --port=8000 --reload
+# Manual start
+uvicorn app.main:create_app --factory --reload
 ```
 
 **Access API documentation:**
@@ -369,43 +413,36 @@ The collection includes all API endpoints organized by feature (Users, Authentic
 **Note:** Tests use SQLite in-memory database (no PostgreSQL required for testing)
 
 ```sh
-# Run all tests (original + comprehensive)
+# Run all 128 tests
 pytest
 
-# Run only the original tests (24 tests)
-pytest tests/ -v
-
-# Run comprehensive AI-generated tests (26 tests)
-pytest AI_Assistant_Analysis/comprehensive_tests/ -v
-
-# Run specific test class
-pytest AI_Assistant_Analysis/comprehensive_tests/test_comprehensive.py::TestSecurityAndAuthorization -v
-
-# Run with coverage report
+# Run tests with coverage report
 pytest --cov=app --cov-report=html
 ```
 
 ## Test Coverage
 
-**Total: 50 tests (100% passing)** ✅
+**Total: 128 tests (100% passing)** ✅
 
 | Category | Tests | Status |
 |----------|-------|--------|
-| Original Tests | 24 | ✅ PASS |
-| Comprehensive Tests | 26 | ✅ PASS |
-| **Total** | **50** | **✅ PASS** |
+| Unit Tests (auth, rides) | ~60 | ✅ PASS |
+| Integration Tests (flows) | ~40 | ✅ PASS |
+| Comprehensive (Edge cases) | ~28 | ✅ PASS |
+| **Total** | **128** | **✅ PASS** |
 
 ### Test Categories
 - Authentication & Authorization
-- Ride Management
+- Ride Management (Create, Join, Leave, Edit)
+- **New:** Owned & Joined Ride Filtering
 - Participation Management
+- **New:** WebSocket Connection & Event Handling
 - Data Validation
 - Edge Cases
 - Security & JWT handling
-- API Contract Compliance
 - Concurrency
 
-**See `AI_Assistant_Analysis/README_AI.md` for detailed test breakdown, comparison with original tests, and enhancement recommendations.**
+**See `TESTING.md` for detailed test instructions.**
 
 ## Authentication
 

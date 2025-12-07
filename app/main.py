@@ -1,10 +1,12 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+import socketio
 
 import os
 from dotenv import load_dotenv
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 
 from app import routers
@@ -44,6 +46,15 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # Configure CORS
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000"],  # Frontend URL
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     app.include_router(
         routers.user_router,
         prefix="/users",
@@ -67,6 +78,14 @@ def create_app() -> FastAPI:
         prefix="/participations",
         tags=["Participation"],
     )
-    return app
+
+    # Mount Socket.IO
+    from app.sockets import sio
+    # This wraps the FastAPI app with the Socket.IO ASGI app handler
+    # socket_app works as the main entry point
+    socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
+    
+    return socket_app
+
 
 app = create_app()

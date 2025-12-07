@@ -1,11 +1,11 @@
 from datetime import datetime
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select
 
 from typing import Sequence
 import secrets, string
 
-from app.models import RideModel
+from app.models import ParticipationModel, RideModel
 
 
 class RideRepository:
@@ -52,6 +52,14 @@ class RideRepository:
     def get_all_rides(self) -> Sequence[RideModel]:
         statement = select(RideModel)
         return(self.session.execute(statement).scalars().all())
+    
+    def get_participants(self, *, ride_id: int) -> Sequence[ParticipationModel]:
+        statement = (
+            select(ParticipationModel)
+            .options(joinedload(ParticipationModel.participant))
+            .where(ParticipationModel.ride_id == ride_id)
+        )
+        return self.session.execute(statement).unique().scalars().all()
  
 
     def get_by_code(self, *, ride_code: str) -> RideModel | None:
@@ -62,9 +70,22 @@ class RideRepository:
         statement = select(RideModel).where(RideModel.id == ride_id)
         return(self.session.execute(statement).scalar_one_or_none())
     
-    def delete_ride(self, *, ride: RideModel) -> None:
-        self.session.delete(ride)
-        self.session.flush()
+    def get_owned_rides(self, *, user_id: int) -> list[RideModel]:
+        statement = select(RideModel).where(
+            RideModel.created_by_user_id == user_id
+            )
+        return(self.session.execute(statement).scalars().all())
+
+    def get_joined_rides(self, *, user_id: int) -> list[RideModel]:
+        statement = select(RideModel).where(
+            RideModel.has_participants.any(
+                ParticipationModel.user_id == user_id
+                )
+        )
+        return(self.session.execute(statement).scalars().all())
+
+# ------------- UPDATE & DELETE ------------- #
+
 
     def update_ride(
             self,
@@ -89,3 +110,7 @@ class RideRepository:
         self.session.add(ride)
         self.session.flush()
         return ride
+
+    def delete_ride(self, *, ride: RideModel) -> None:
+        self.session.delete(ride)
+        self.session.flush()

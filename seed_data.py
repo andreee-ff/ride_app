@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 import os
 from dotenv import load_dotenv
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from app.models import DbModel, UserModel, RideModel, ParticipationModel
@@ -106,6 +106,17 @@ def reset_db(engine):
     DbModel.metadata.drop_all(engine)
     print("📦 Creating tables...")
     DbModel.metadata.create_all(engine)
+    
+    # Reset sequences (PostgreSQL only)
+    if engine.dialect.name == 'postgresql':
+        print("🔄 Resetting sequences...")
+        with Session(engine) as session:
+            session.execute(text("ALTER SEQUENCE users_id_seq RESTART WITH 1"))
+            session.execute(text("ALTER SEQUENCE rides_id_seq RESTART WITH 1"))
+            session.execute(text("ALTER SEQUENCE participations_id_seq RESTART WITH 1"))
+            session.commit()
+        print("✅ Sequences reset.")
+    
     print("✅ Database reset complete.")
 
 
@@ -157,10 +168,20 @@ def seed_massive(engine, num_users=10, num_rides=20, num_participations=50):
         print(f"🚴 Created {len(rides)} rides")
 
         # ------------- PARTICIPATIONS ----------
-        for _ in range(num_participations):
+        created_pairs = set()
+        attempts = 0
+        max_attempts = num_participations * 10
+        
+        while len(created_pairs) < num_participations and attempts < max_attempts:
+            attempts += 1
             user = random.choice(users)
             ride = random.choice(rides)
-
+            
+            pair = (user.id, ride.id)
+            if pair in created_pairs:
+                continue
+            
+            created_pairs.add(pair)
             lat, lon = random_coordinates()
 
             participation = ParticipationModel(
@@ -173,7 +194,7 @@ def seed_massive(engine, num_users=10, num_rides=20, num_participations=50):
             session.add(participation)
 
         session.commit()
-        print("📍 Participations created")
+        print(f"📍 Created {len(created_pairs)} participations")
         print("🎉 Seeding completed!")
 
 

@@ -94,14 +94,21 @@ class ParticipationResponse(TimestampMixin):
     id: int
     user_id: int
     ride_id: int
-    created_at: datetime
+    joined_at: datetime
     updated_at: datetime
     latitude: float | None = None
     longitude: float | None = None
     location_timestamp: datetime | None = None
 
 
-
+class ParticipantResponse(TimestampMixin):
+    id: int
+    user_id: int
+    username: str
+    joined_at: datetime
+    latitude: float | None = None
+    longitude: float | None = None
+    location_timestamp: datetime | None = None
 
 
 

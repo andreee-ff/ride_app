@@ -2,6 +2,11 @@ from collections.abc import Generator, Callable
 
 from datetime import datetime, timezone
 import secrets, string
+import os
+import sys
+
+# Add project root to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
@@ -15,20 +20,27 @@ from app.models import DbModel, UserModel, RideModel, ParticipationModel
 
 @fixture(scope="function")
 def app() -> FastAPI:
+    # Ensure tests use SQLite, overriding any local .env configuration
+    db_path = os.path.join(os.path.dirname(__file__), "pending_tests.db")
+    os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
     application = create_app()
     if hasattr(application, "other_asgi_app"):
-        return application.other_asgi_app
+         return application.other_asgi_app
     return application
 
 @fixture(scope="function")
 def session(app: FastAPI) -> Generator[Session]:
-    engine = create_engine("sqlite:///test.db")
+    # Use a separate DB for pending tests
+    db_path = os.path.join(os.path.dirname(__file__), "pending_tests.db")
+    engine = create_engine(f"sqlite:///{db_path}")
     DbModel.metadata.create_all(bind=engine)
     try:
-        with (session := Session(bind=engine)).begin():
+        session = Session(bind=engine)
+        try:
             app.dependency_overrides[get_session] = lambda: session
             yield session
-            session.rollback()
+        finally:
+            session.close()
     finally:
         DbModel.metadata.drop_all(engine)
         engine.dispose()
@@ -45,8 +57,6 @@ def test_user(session: Session) -> UserModel:
     session.flush()
     return user
 
-
-
 @fixture(scope="function")
 def test_ride(session: Session, test_user: UserModel) -> RideModel:
     ride = RideModel(
@@ -59,33 +69,6 @@ def test_ride(session: Session, test_user: UserModel) -> RideModel:
     session.add(ride)
     session.flush()
     return ride
-
-# ------------------ RIDE _ FACTORY
-RideFactoryType = Callable[..., RideModel]
-
-@fixture(scope="function")
-def ride_factory(session: Session, test_user: UserModel) -> RideFactoryType:
-    def _create_ride(
-            *,
-            code: str | None = None,
-            title: str = "Test Ride",
-            description: str = "Test description",
-            start_time: datetime | None = None,
-    ) -> RideModel:
-        random_code = "".join(secrets.choice(string.ascii_uppercase) for _ in range(6))
-        ride = RideModel(
-            code=code or random_code,
-            title=f"{title} {random_code}",
-            description=f"{description} {random_code}",
-            start_time=start_time or datetime(2025, 11, 18, 15, 30, tzinfo=timezone.utc),
-            created_by_user_id=test_user.id,
-        )
-        session.add(ride)
-        session.flush()
-        return ride
-    
-    return _create_ride
-
 
 @fixture(scope="function")
 def auth_headers(test_client: TestClient, session: Session,) -> dict[str, str]:
@@ -102,23 +85,3 @@ def auth_headers(test_client: TestClient, session: Session,) -> dict[str, str]:
 
     access_token = login_response.json()["access_token"]
     return {"Authorization": f"Bearer {access_token}"}
-
-
-
-# ------------------ PARTICIPATION
-@fixture(scope="function")
-def test_participation(
-    session: Session,
-    test_user: UserModel,
-    test_ride: RideModel,
-) -> ParticipationModel:
-    participation = ParticipationModel(
-        user_id = test_user.id,
-        ride_id = test_ride.id,
-        latitude = 48.1351,
-        longitude = 11.5820,
-        updated_at = datetime(2025, 11, 18, 15, 30, tzinfo=timezone.utc),
-    )
-    session.add(participation)
-    session.flush()
-    return participation

@@ -15,7 +15,10 @@ from app.models import DbModel, UserModel, RideModel, ParticipationModel
 
 @fixture(scope="function")
 def app() -> FastAPI:
-    return create_app()
+    application = create_app()
+    if hasattr(application, "other_asgi_app"):
+        return application.other_asgi_app
+    return application
 
 @fixture(scope="function")
 def session(app: FastAPI) -> Generator[Session]:

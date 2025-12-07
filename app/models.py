@@ -1,7 +1,7 @@
 from datetime import datetime
-from sqlalchemy import String, Boolean, ForeignKey, func, DateTime, UniqueConstraint
+from sqlalchemy import String, ForeignKey, func, DateTime, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from typing import List, Optional
+from typing import Optional
 from sqlalchemy import Numeric
 
 
@@ -69,7 +69,7 @@ class ParticipationModel(DbModel):
         )
     latitude: Mapped[float] = mapped_column(Numeric(10, 8), nullable=True)
     longitude: Mapped[float] = mapped_column(Numeric(10, 8), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] =  mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     location_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
 

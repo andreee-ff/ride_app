@@ -1,7 +1,6 @@
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import APIRouter, Depends, HTTPException, status
 
 
 from app.injections import (
@@ -12,6 +11,7 @@ from app.repositories import (
 )
 
 from app.schemas import (
+    ParticipantResponse,
     UserResponse,
     RideResponse,
     RideCreate,
@@ -43,6 +43,10 @@ def create_ride(
     created_by_user_id = current_user.id,
     ) 
     return RideResponse.model_validate(ride_model)
+
+create_ride.__doc__ = """
+    Create a new ride.
+    """
     
 @router.get(
     "/",
@@ -55,6 +59,48 @@ def get_list_rides(
     
     rides = ride_repository.get_all_rides()
     return [RideResponse.model_validate(ride) for ride in rides]
+
+get_list_rides.__doc__ = """
+    Get all rides in the database.
+    """
+
+@router.get(
+    "/owned",
+    status_code=status.HTTP_200_OK,
+    response_model=List[RideResponse],
+    responses={status.HTTP_404_NOT_FOUND: {}},
+)
+def get_owned_rides(
+    ride_repository: Annotated[RideRepository, Depends(get_ride_repository)],
+    current_user: Annotated[UserResponse, Depends(get_current_user)],
+) -> List[RideResponse]:
+    owned_rides = ride_repository.get_owned_rides(user_id=current_user.id)
+    if not owned_rides:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    return [RideResponse.model_validate(r) for r in owned_rides]
+
+get_owned_rides.__doc__ = """
+    Get all rides created by the current user.
+    """
+
+@router.get(
+    "/joined",
+    status_code=status.HTTP_200_OK,
+    response_model=List[RideResponse],
+    responses={status.HTTP_404_NOT_FOUND: {}},
+)
+def get_joined_rides(
+    ride_repository: Annotated[RideRepository, Depends(get_ride_repository)],
+    current_user: Annotated[UserResponse, Depends(get_current_user)],
+) -> List[RideResponse]:
+    joined_rides = ride_repository.get_joined_rides(user_id = current_user.id)
+    if not joined_rides:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    return [RideResponse.model_validate(r) for r in joined_rides]
+
+get_joined_rides.__doc__ = """
+    Get all rides joined by the current user.
+    """
 
 @router.get(
     "/code/{code}",
@@ -73,6 +119,10 @@ def get_ride_by_code(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return RideResponse.model_validate(ride) 
 
+get_ride_by_code.__doc__ = """
+    Get a ride by its code.
+    """
+
 @router.get(
         "/{id}",
         response_model=RideResponse,
@@ -88,31 +138,40 @@ def get_ride_by_id(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return RideResponse.model_validate(ride)
 
-@router.delete(
-    "/{id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    responses={
-        status.HTTP_404_NOT_FOUND: {},       
-        status.HTTP_403_FORBIDDEN: {},
-        },
+get_ride_by_id.__doc__ = """
+    Get a ride by its id.
+    """
+
+
+@router.get(
+    "/{ride_id}/participants",
+    response_model=List[ParticipantResponse],
+    status_code=status.HTTP_200_OK,
+    responses={status.HTTP_404_NOT_FOUND: {}},
 )
-def delete_ride_by_id(
-    id: int,
+def get_ride_participants(
+    ride_id: int,
     ride_repository: Annotated[RideRepository, Depends(get_ride_repository)],
-    current_user: Annotated[UserResponse, Depends(get_current_user)],
-) -> None:
-    selected_ride = ride_repository.get_by_id(ride_id=id)
-    if not selected_ride:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+) -> List[ParticipantResponse]:
+    participants = ride_repository.get_participants(ride_id=ride_id)
+
+    return [
+        ParticipantResponse(
+            id=p.id,
+            user_id=p.user_id,
+            username=p.participant.username,
+            joined_at=p.joined_at,
+            latitude=p.latitude,
+            longitude=p.longitude,
+            location_timestamp=p.location_timestamp,
+        )
+        for p in participants 
+    ]
+
+get_ride_participants.__doc__ = """
+    Get all participants of a ride.
+    """
     
-    if selected_ride.created_by_user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not allowed to delete this ride. The ride was created by another user"
-            )
-    
-    ride_repository.delete_ride(ride=selected_ride)    
-    return
 
 @router.put(
     "/{id}",
@@ -148,3 +207,38 @@ def update_ride_by_id(
         is_active = ride_to_update.is_active,
     )
     return RideResponse.model_validate(ride_model)
+
+update_ride_by_id.__doc__ = """
+    Update a ride by its id.
+    """
+
+@router.delete(
+    "/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_404_NOT_FOUND: {},       
+        status.HTTP_403_FORBIDDEN: {},
+        },
+)
+def delete_ride_by_id(
+    id: int,
+    ride_repository: Annotated[RideRepository, Depends(get_ride_repository)],
+    current_user: Annotated[UserResponse, Depends(get_current_user)],
+) -> None:
+    selected_ride = ride_repository.get_by_id(ride_id=id)
+    if not selected_ride:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    
+    if selected_ride.created_by_user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not allowed to delete this ride. The ride was created by another user"
+            )
+    
+    ride_repository.delete_ride(ride=selected_ride)    
+    return
+
+delete_ride_by_id.__doc__ = """
+    Delete a ride by its id.
+    """
+
