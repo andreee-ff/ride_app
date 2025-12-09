@@ -153,6 +153,7 @@ def seed_massive(engine, num_users=10, num_rides=20, num_participations=50):
         print(f"👤 Created {len(users)} users")
 
         # ---------------- RIDES ----------------
+        created_pairs = set()
         for _ in range(num_rides):
             creator = random.choice(users)
             ride = RideModel(
@@ -165,10 +166,22 @@ def seed_massive(engine, num_users=10, num_rides=20, num_participations=50):
             session.add(ride)
             session.flush()
             rides.append(ride)
+
+            # Auto-add creator as participant
+            creator_part = ParticipationModel(
+                user_id=creator.id,
+                ride_id=ride.id,
+                latitude=48.0 + random.random(),
+                longitude=11.0 + random.random(),
+                updated_at=datetime.now(timezone.utc),
+            )
+            session.add(creator_part)
+            session.flush()
+            created_pairs.add((creator.id, ride.id))
         print(f"🚴 Created {len(rides)} rides")
 
         # ------------- PARTICIPATIONS ----------
-        created_pairs = set()
+        # created_pairs is already initialized and populated with creators
         attempts = 0
         max_attempts = num_participations * 10
         

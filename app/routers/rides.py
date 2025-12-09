@@ -103,6 +103,26 @@ get_joined_rides.__doc__ = """
     """
 
 @router.get(
+    "/available",
+    status_code=status.HTTP_200_OK,
+    response_model=List[RideResponse],
+    responses={status.HTTP_404_NOT_FOUND: {}},
+)
+def get_available_rides(
+    ride_repository: Annotated[RideRepository, Depends(get_ride_repository)],
+    current_user: Annotated[UserResponse, Depends(get_current_user)],
+) -> List[RideResponse]:
+    available_rides = ride_repository.get_available_rides(user_id=current_user.id)
+    if not available_rides:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    return [RideResponse.model_validate(r) for r in available_rides]
+
+get_available_rides.__doc__ = """
+    Get all rides available for the current user.
+    """
+
+
+@router.get(
     "/code/{code}",
     response_model=RideResponse,    
     status_code=status.HTTP_200_OK,

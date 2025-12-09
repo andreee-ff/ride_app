@@ -218,6 +218,18 @@ git push origin main --tags
 - All participants in the same "room" (ride) receive live updates
 - Fallback: `PUT /participations/{id}` for HTTP updates
 
+### Socket.IO Protocol
+
+**Events (Client -> Server):**
+- `join_ride`: Client joins a specific ride room.
+  - Payload: `{ "ride_code": "ABC123" }`
+- `update_location`: Client sends new GPS coordinates.
+  - Payload: `{ "ride_code": "ABC123", "user_id": 1, "latitude": 48.135, "longitude": 11.582 }`
+
+**Events (Server -> Client):**
+- `location_update`: Broadcasted to all other participants in the room.
+  - Payload: `{ "user_id": 1, "latitude": 48.135, "longitude": 11.582, "location_timestamp": "2023-..." }`
+
 **5. Group Analytics (Future Development)**
 - Calculate distances between participants
 - Identify riders falling behind
@@ -790,5 +802,5 @@ This project was created as a final project after completing the Python Backend 
 
 ---
 
-**Last Updated:** November 29, 2025  
-**Status:** Production Ready ✅
+**Last Updated:** December 09, 2025  
+**Status:** Active Development (Frontend Integration Complete) ✅

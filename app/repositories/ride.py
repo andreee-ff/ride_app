@@ -47,6 +47,15 @@ class RideRepository:
         self.session.add(new_ride)
         self.session.flush()
 
+        # Create participation for the creator
+        new_participation = ParticipationModel(
+            ride_id=new_ride.id,
+            user_id=created_by_user_id,
+        )
+
+        self.session.add(new_participation)
+        self.session.flush()    
+
         return new_ride
     
     def get_all_rides(self) -> Sequence[RideModel]:
@@ -73,16 +82,24 @@ class RideRepository:
     def get_owned_rides(self, *, user_id: int) -> list[RideModel]:
         statement = select(RideModel).where(
             RideModel.created_by_user_id == user_id
-            )
+            ).order_by(RideModel.start_time.asc())
         return(self.session.execute(statement).scalars().all())
 
     def get_joined_rides(self, *, user_id: int) -> list[RideModel]:
         statement = select(RideModel).where(
             RideModel.has_participants.any(
                 ParticipationModel.user_id == user_id
-                )
-        )
+                )).order_by(RideModel.start_time.asc())
         return(self.session.execute(statement).scalars().all())
+
+    def get_available_rides(self, *, user_id: int) -> list[RideModel]:
+        statement = select(RideModel).where(
+            ~RideModel.has_participants.any(
+                ParticipationModel.user_id == user_id
+            )
+        ).order_by(RideModel.start_time.asc())
+        return(self.session.execute(statement).scalars().all())
+
 
 # ------------- UPDATE & DELETE ------------- #
 
